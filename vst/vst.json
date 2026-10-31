@@ -1,0 +1,37 @@
+{
+ "name": "Reverbicon 224",
+ "vendor": "sd88me",
+ "uid": "Cn24",
+ "version": 1000,
+ "so": "reverbicon224.so",
+ "params": "params.json",
+ "layout": "layout.conf",
+ "art": "html",
+ "effect": true,
+ "targets": [
+  "armv7",
+  "aarch64"
+ ],
+ "defines": {
+  "MODULE_SUBDIR": "\"Content\"",
+  "HAS_DISPLAY_REV": 1,
+  "PARAM_TEXT_MAX": 48
+ },
+ "build": {
+  "root": "..",
+  "sources": [
+   "src/engine.cpp",
+   "src/core/hall.cpp"
+  ],
+  "cflags": [
+   "-std=gnu++20",
+   "-Isrc",
+   "-O3",
+   "-ffp-contract=off"
+  ],
+  "libs": [
+   "-lm"
+  ]
+ },
+ "presets": "presets.json"
+}

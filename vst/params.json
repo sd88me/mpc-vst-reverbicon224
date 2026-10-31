@@ -1,0 +1,161 @@
+{
+ "name": "Reverbicon 224",
+ "params": [
+  {
+   "key": "algorithm",
+   "name": "Algorithm",
+   "options": [
+    "Small Hall B",
+    "Vocal Plate",
+    "Large Hall B",
+    "Acoustic Chamber",
+    "Perc Plate A",
+    "Small Hall A"
+   ],
+   "default": 2
+  },
+  {
+   "key": "bass",
+   "name": "Bass",
+   "min": 1,
+   "max": 31,
+   "default": 17,
+   "display": "int"
+  },
+  {
+   "key": "mid",
+   "name": "Mid",
+   "min": 0,
+   "max": 31,
+   "default": 14,
+   "display": "int"
+  },
+  {
+   "key": "xover",
+   "name": "Xover",
+   "min": 0,
+   "max": 31,
+   "default": 5,
+   "display": "int"
+  },
+  {
+   "key": "treble",
+   "name": "Treble",
+   "min": 0,
+   "max": 31,
+   "default": 23,
+   "display": "int"
+  },
+  {
+   "key": "depth",
+   "name": "Depth",
+   "min": 0,
+   "max": 71,
+   "default": 21,
+   "display": "int"
+  },
+  {
+   "key": "predelay",
+   "name": "Pre-Delay",
+   "min": 0,
+   "max": 128,
+   "default": 0,
+   "display": "int",
+   "unit": "ms"
+  },
+  {
+   "key": "diffusion",
+   "name": "Diffusion",
+   "min": 1,
+   "max": 63,
+   "default": 1,
+   "display": "int"
+  },
+  {
+   "key": "input",
+   "name": "Input",
+   "min": -36,
+   "max": 12,
+   "default": 0,
+   "unit": "dB"
+  },
+  {
+   "key": "mix",
+   "name": "Mix",
+   "min": 0,
+   "max": 100,
+   "default": 100,
+   "unit": "%"
+  },
+  {
+   "key": "dirt",
+   "name": "Dirt",
+   "min": 0,
+   "max": 100,
+   "default": 0,
+   "unit": "%"
+  },
+  {
+   "key": "mode_enh",
+   "name": "Mode Enh",
+   "options": [
+    "Off",
+    "On"
+   ],
+   "default": 1
+  },
+  {
+   "key": "decay_opt",
+   "name": "Decay Opt",
+   "options": [
+    "Off",
+    "On"
+   ],
+   "default": 1
+  },
+  {
+   "key": "out_l",
+   "name": "Left Out",
+   "options": [
+    "A",
+    "B",
+    "C",
+    "D"
+   ],
+   "default": 0
+  },
+  {
+   "key": "out_r",
+   "name": "Right Out",
+   "options": [
+    "A",
+    "B",
+    "C",
+    "D"
+   ],
+   "default": 2
+  },
+  {
+   "key": "status",
+   "name": "Status",
+   "display": "string",
+   "poll": false
+  },
+  {
+   "key": "meter_l",
+   "name": "Meter L",
+   "min": 0,
+   "max": 5,
+   "default": 0,
+   "display": "int"
+  },
+  {
+   "key": "meter_r",
+   "name": "Meter R",
+   "min": 0,
+   "max": 5,
+   "default": 0,
+   "display": "int"
+  }
+ ]
+}

@@ -1,0 +1,324 @@
+{
+ "presets": [
+  {
+   "name": "Small Hall B",
+   "values": {
+    "bass": 17,
+    "mid": 14,
+    "xover": 5,
+    "treble": 23,
+    "depth": 21,
+    "predelay": 0,
+    "diffusion": 1,
+    "input": 0,
+    "mix": 100,
+    "dirt": 0,
+    "mode_enh": "On",
+    "decay_opt": "On",
+    "out_l": "A",
+    "out_r": "C",
+    "algorithm": "Small Hall B"
+   }
+  },
+  {
+   "name": "Vocal Plate",
+   "values": {
+    "bass": 17,
+    "mid": 14,
+    "xover": 5,
+    "treble": 23,
+    "depth": 21,
+    "predelay": 0,
+    "diffusion": 1,
+    "input": 0,
+    "mix": 100,
+    "dirt": 0,
+    "mode_enh": "On",
+    "decay_opt": "On",
+    "out_l": "A",
+    "out_r": "C",
+    "algorithm": "Vocal Plate"
+   }
+  },
+  {
+   "name": "Large Hall B",
+   "values": {
+    "bass": 17,
+    "mid": 14,
+    "xover": 5,
+    "treble": 23,
+    "depth": 21,
+    "predelay": 0,
+    "diffusion": 1,
+    "input": 0,
+    "mix": 100,
+    "dirt": 0,
+    "mode_enh": "On",
+    "decay_opt": "On",
+    "out_l": "A",
+    "out_r": "C",
+    "algorithm": "Large Hall B"
+   }
+  },
+  {
+   "name": "Acoustic Chamber",
+   "values": {
+    "bass": 17,
+    "mid": 14,
+    "xover": 5,
+    "treble": 23,
+    "depth": 21,
+    "predelay": 0,
+    "diffusion": 1,
+    "input": 0,
+    "mix": 100,
+    "dirt": 0,
+    "mode_enh": "On",
+    "decay_opt": "On",
+    "out_l": "A",
+    "out_r": "C",
+    "algorithm": "Acoustic Chamber"
+   }
+  },
+  {
+   "name": "Perc Plate A",
+   "values": {
+    "bass": 17,
+    "mid": 14,
+    "xover": 5,
+    "treble": 23,
+    "depth": 21,
+    "predelay": 0,
+    "diffusion": 1,
+    "input": 0,
+    "mix": 100,
+    "dirt": 0,
+    "mode_enh": "On",
+    "decay_opt": "On",
+    "out_l": "A",
+    "out_r": "C",
+    "algorithm": "Perc Plate A"
+   }
+  },
+  {
+   "name": "Small Hall A",
+   "values": {
+    "bass": 17,
+    "mid": 14,
+    "xover": 5,
+    "treble": 23,
+    "depth": 21,
+    "predelay": 0,
+    "diffusion": 1,
+    "input": 0,
+    "mix": 100,
+    "dirt": 0,
+    "mode_enh": "On",
+    "decay_opt": "On",
+    "out_l": "A",
+    "out_r": "C",
+    "algorithm": "Small Hall A"
+   }
+  },
+  {
+   "name": "Vocal Plate Insert",
+   "values": {
+    "bass": 17,
+    "mid": 14,
+    "xover": 5,
+    "treble": 23,
+    "depth": 21,
+    "predelay": 0,
+    "diffusion": 1,
+    "input": 0,
+    "mix": 28,
+    "dirt": 0,
+    "mode_enh": "On",
+    "decay_opt": "On",
+    "out_l": "A",
+    "out_r": "C",
+    "algorithm": "Vocal Plate"
+   }
+  },
+  {
+   "name": "Large Hall Insert",
+   "values": {
+    "bass": 17,
+    "mid": 14,
+    "xover": 5,
+    "treble": 23,
+    "depth": 21,
+    "predelay": 0,
+    "diffusion": 1,
+    "input": 0,
+    "mix": 25,
+    "dirt": 0,
+    "mode_enh": "On",
+    "decay_opt": "On",
+    "out_l": "A",
+    "out_r": "C",
+    "algorithm": "Large Hall B"
+   }
+  },
+  {
+   "name": "Chamber Insert",
+   "values": {
+    "bass": 17,
+    "mid": 14,
+    "xover": 5,
+    "treble": 23,
+    "depth": 21,
+    "predelay": 0,
+    "diffusion": 1,
+    "input": 0,
+    "mix": 30,
+    "dirt": 0,
+    "mode_enh": "On",
+    "decay_opt": "On",
+    "out_l": "A",
+    "out_r": "C",
+    "algorithm": "Acoustic Chamber"
+   }
+  },
+  {
+   "name": "Perc Plate Insert",
+   "values": {
+    "bass": 17,
+    "mid": 14,
+    "xover": 5,
+    "treble": 23,
+    "depth": 21,
+    "predelay": 0,
+    "diffusion": 1,
+    "input": 0,
+    "mix": 22,
+    "dirt": 0,
+    "mode_enh": "On",
+    "decay_opt": "On",
+    "out_l": "A",
+    "out_r": "C",
+    "algorithm": "Perc Plate A"
+   }
+  },
+  {
+   "name": "Small Hall Insert",
+   "values": {
+    "bass": 17,
+    "mid": 14,
+    "xover": 5,
+    "treble": 23,
+    "depth": 21,
+    "predelay": 0,
+    "diffusion": 1,
+    "input": 0,
+    "mix": 25,
+    "dirt": 0,
+    "mode_enh": "On",
+    "decay_opt": "On",
+    "out_l": "A",
+    "out_r": "C",
+    "algorithm": "Small Hall B"
+   }
+  },
+  {
+   "name": "Dark Long Hall",
+   "values": {
+    "bass": 22,
+    "mid": 18,
+    "xover": 8,
+    "treble": 14,
+    "depth": 30,
+    "predelay": 20,
+    "diffusion": 1,
+    "input": 0,
+    "mix": 35,
+    "dirt": 0,
+    "mode_enh": "On",
+    "decay_opt": "On",
+    "out_l": "A",
+    "out_r": "C",
+    "algorithm": "Large Hall B"
+   }
+  },
+  {
+   "name": "Bright Plate",
+   "values": {
+    "bass": 15,
+    "mid": 12,
+    "xover": 5,
+    "treble": 28,
+    "depth": 24,
+    "predelay": 0,
+    "diffusion": 1,
+    "input": 0,
+    "mix": 30,
+    "dirt": 0,
+    "mode_enh": "On",
+    "decay_opt": "On",
+    "out_l": "A",
+    "out_r": "C",
+    "algorithm": "Vocal Plate"
+   }
+  },
+  {
+   "name": "Dirty Hall",
+   "values": {
+    "bass": 17,
+    "mid": 14,
+    "xover": 5,
+    "treble": 23,
+    "depth": 21,
+    "predelay": 0,
+    "diffusion": 1,
+    "input": 3,
+    "mix": 40,
+    "dirt": 65,
+    "mode_enh": "On",
+    "decay_opt": "On",
+    "out_l": "A",
+    "out_r": "C",
+    "algorithm": "Large Hall B"
+   }
+  },
+  {
+   "name": "Short Ambience",
+   "values": {
+    "bass": 6,
+    "mid": 4,
+    "xover": 6,
+    "treble": 20,
+    "depth": 10,
+    "predelay": 0,
+    "diffusion": 1,
+    "input": 0,
+    "mix": 22,
+    "dirt": 0,
+    "mode_enh": "On",
+    "decay_opt": "On",
+    "out_l": "A",
+    "out_r": "C",
+    "algorithm": "Small Hall A"
+   }
+  },
+  {
+   "name": "Snare Room",
+   "values": {
+    "bass": 8,
+    "mid": 6,
+    "xover": 5,
+    "treble": 26,
+    "depth": 12,
+    "predelay": 0,
+    "diffusion": 1,
+    "input": 0,
+    "mix": 30,
+    "dirt": 0,
+    "mode_enh": "On",
+    "decay_opt": "On",
+    "out_l": "A",
+    "out_r": "C",
+    "algorithm": "Perc Plate A"
+   }
+  }
+ ]
+}
