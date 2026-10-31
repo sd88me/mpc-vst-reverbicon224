@@ -11,7 +11,7 @@ progress). Built for armv7 (Force, Gen 1) and aarch64 (Live III, Gen 2).
 | Device | Installed | Checked |
 |---|---|---|
 | MPC Live III (aarch64) | installed on the internal drive, plugin folder `sd88me - VST - Reverbicon 224/` | loads, sound, skin, presets, Q-Links, project reload, ROM import (337 s, bank identical to the PC's), meter shown moving, bench PASS (mean 5.1%, p99 5.3%) |
-| Force (armv7, MPC 3.9.1) | `/sdcard/Synths/sd88me - VST - Reverbicon 224/`, entry in `pluginList-arm` (backup `MPC.settings.bak-reverbicon`) | loads as an insert, skin renders (screenshot), BANK READY, bench WARN (mean 14.5%, p99 19.4%) |
+| Force (armv7, MPC 3.9.1) | `/sdcard/Synths/sd88me - VST - Reverbicon 224/`, entry in `pluginList-arm` (backup `MPC.settings.bak-reverbicon`) | loads as an insert, skin renders (screenshot), BANK READY, ROM import from `Content/ROMs/` (1020 s, bank identical), bench WARN (mean 14.5%, p99 19.4%) |
 
 ## Layout of the code
 - `src/engine.cpp`: the `mpc_engine()` glue. Per block: input peaks for the meter, 44.1 -> 48 kHz (`RationalFilter<160,147>`), cineolX
@@ -39,8 +39,7 @@ A changed skin needs an MPC restart (`systemctl restart acvs`); ask the user fir
 `MPC.settings` (Force): stop MPC, back up, edit whole `<PLUGIN>` elements, keep CRLF, validate as XML, start MPC; a broken list stops MPC from booting.
 
 ## Open items
-1. **Force ROM import is untested.** Expect roughly 15 to 25 minutes on armv7. Run it for real (empty `Content/`, ROMs in place): check progress,
-   MPC stays responsive while the helper runs, and the bank is byte-identical (md5 `17f71e03...`).
+1. ~~Force ROM import~~ **done 2026-11-01:** bank removed, new instance inserted, the helper started by itself (low priority), progress ran 0 to 100% in the display, finished in **1020 s (17 min)**, bank md5 identical to the PC's, status ended at BANK READY with no reload; the touch screen stayed responsive throughout (a key press lit within a second at ~15% progress). Note MPC dims and blurs the screen after ~15 minutes idle: a tap wakes it.
 2. **Audio and meter on the Force.** The test track's synth was silent, so the meter and the sound were not checked there. Re-test with a loaded source.
 3. **Meter refresh cost.** Every change in lit LEDs bumps `display_rev`, so the host redraws up to ~10 times a second. Check fader drags stay smooth
    on both devices while the meter moves. If not, the fallback is a coarser meter or `DISPLAY_REV_NO_UPDATE` with the status line drawn as pictures.
