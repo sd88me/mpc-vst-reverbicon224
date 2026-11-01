@@ -1,0 +1,60 @@
+[
+  {
+    "path": "Content/ROMs",
+    "label": "Lexicon 224 v4.4 ROMs",
+    "description": "Your own ROM1 to ROM5 chip images (2048 bytes each) from a Lexicon 224 with version 4.4 firmware. They are not included with the plugin. Once all five are in this folder, Reverbicon 224 builds its program bank by itself the first time you load it (about 6 minutes on a Live III, 17 on a Force) and shows the progress on its display.",
+    "hint": "Five files, one per chip: ROM1 to ROM5. Other firmware versions do not work.",
+    "rules": [
+      {
+        "label": "ROM1 (Lexicon 224 v4.4)",
+        "ext": [
+          ".bin"
+        ],
+        "size": 2048,
+        "header_hex": "c304000f3100403e",
+        "unverified": true,
+        "note": "The right size and start for ROM1. Reverbicon 224 checks the exact v4.4 chip itself when it builds its bank and says so on its display if one is wrong."
+      },
+      {
+        "label": "ROM2 (Lexicon 224 v4.4)",
+        "ext": [
+          ".bin"
+        ],
+        "size": 2048,
+        "header_hex": "403f1ae6efb1122a",
+        "unverified": true,
+        "note": "The right size and start for ROM2. Reverbicon 224 checks the exact v4.4 chip itself when it builds its bank and says so on its display if one is wrong."
+      },
+      {
+        "label": "ROM3 (Lexicon 224 v4.4)",
+        "ext": [
+          ".bin"
+        ],
+        "size": 2048,
+        "header_hex": "2323020315c2fb0f",
+        "unverified": true,
+        "note": "The right size and start for ROM3. Reverbicon 224 checks the exact v4.4 chip itself when it builds its bank and says so on its display if one is wrong."
+      },
+      {
+        "label": "ROM4 (Lexicon 224 v4.4)",
+        "ext": [
+          ".bin"
+        ],
+        "size": 2048,
+        "header_hex": "0102801858de2b26",
+        "unverified": true,
+        "note": "The right size and start for ROM4. Reverbicon 224 checks the exact v4.4 chip itself when it builds its bank and says so on its display if one is wrong."
+      },
+      {
+        "label": "ROM5 (Lexicon 224 v4.4)",
+        "ext": [
+          ".bin"
+        ],
+        "size": 2048,
+        "header_hex": "0c02ff1856a81624",
+        "unverified": true,
+        "note": "The right size and start for ROM5. Reverbicon 224 checks the exact v4.4 chip itself when it builds its bank and says so on its display if one is wrong."
+      }
+    ]
+  }
+]

@@ -52,7 +52,10 @@ A changed skin needs an MPC restart (`systemctl restart acvs`); ask the user fir
 8. **Preset menu name.** After a project reload the PRESET menu shows the first preset's name though the sound is restored (wrapper behaviour for presets).
 9. **No state chunk** (the host test warns): the project stores the 15 parameter values only; check save/reload with changed values on the Force.
 10. **Not ported:** the 22 224XL programs (cineolX's XL is still a preview), the "Dirt" circuit modelling beyond the one control, quick presets.
-11. The uid `Cn24` was kept from the earlier name "Cineol 224". Projects saved under that name will not find the plugin.
+11. **Installer ROM step.** `release/user-files.json` declares the five ROM chips for PR #668's desktop step (extension, exactly 2048 bytes, an 8-byte per-chip start,
+    marked `unverified` because only the plugin can confirm the v4.4 chip by checksum). `test/user_files_check.py` passes against the real ROMs with the PR's `user_files.py`;
+    the Go side was not run here (no Go toolchain). Re-check when #668 merges, and try a real upload to a device.
+12. The uid `Cn24` was kept from the earlier name "Cineol 224". Projects saved under that name will not find the plugin.
 
 ## Before a public release
 - **Permission and licences.** cineolX (engine, artwork) and Reflexion (its reference emulator, 8080 cores with their own notices) carry no licence. Nothing of
@@ -61,8 +64,8 @@ A changed skin needs an MPC restart (`systemctl restart acvs`); ask the user fir
 - **ROMs.** Never ship ROMs or the bank. The release is ROM-free; the README and the in-plugin status text tell the user what to supply and where.
   Say plainly that the user must own the originals.
 - **Name.** "Reverbicon 224" is the chosen name; keep "Lexicon" only as a factual reference (the README does).
-- **Release recipe** (mpc-vst-plugins): `release.py` with `--repo sd88me/mpc-vst-reverbicon224 --license MIT` and the user-data folder for `Content/ROMs`
-  (as the other ROM-based ports do), then `catalog_check.py --catalog`, a draft GitHub release for testing, and a `catalog/plugins/<id>.json` PR.
+- **Release recipe** (mpc-vst-plugins): `release.py` with `--repo sd88me/mpc-vst-reverbicon224 --license MIT --user-data Content/ROMs --user-files release/user-files.json`
+  (the installer's "Your ROMs and files" step; mpc-vst-plugins PR #668, **open, not merged, not yet run against a device**) and the helpers shipped as extras in `Content/`, then `catalog_check.py --catalog`, a draft GitHub release for testing, and a `catalog/plugins/<id>.json` PR.
   The release must contain both `.so` files and both helpers, executable.
 - **Re-run before tagging:** host test (x86 + aarch64), `import_test`, bench on both devices, a fresh install from the zip, import on the Force, project save/reload.
 - Screenshots for the README (crop the plugin area from a full screenshot, as the other ports do) and a short "how to add ROMs" section for users.
