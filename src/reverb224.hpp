@@ -14,6 +14,7 @@
 #pragma once
 #include "analog224.hpp"
 #include "machine224.hpp"
+#include "panel224.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -57,11 +58,21 @@ public:
                analog::Output(lexicon224x::analog::aout_224_modal()), analog::Output(lexicon224x::analog::aout_224_modal())} {}
 
     Machine224 &machine() { return *m_; }
+    Panel224 &panel() { return panel_; }
     void load_rom(int chip, const uint8_t *data) { m_->load_rom(chip, data); }
 
     // run the firmware through its power-up (boot and self-test) without audio: about 8 s of machine time
     void boot(double seconds = 8.0) {
         m_->run(uint64_t(seconds * kRowsPerSecond));
+        settle_panel();
+        t_ = m_->states * kRow;
+        t0_ = t_;
+    }
+
+    // run the machine (no audio) until the operator's queue is done, at most `seconds`: for setting up controls before audio starts
+    void settle_panel(double seconds = 3.0) {
+        const uint64_t end = m_->states + uint64_t(seconds * kRowsPerSecond);
+        while (!panel_.idle() && m_->states < end) { panel_.tick(); m_->run(256); }
         t_ = m_->states * kRow;
         t0_ = t_;
     }
@@ -77,6 +88,7 @@ public:
             in_[1].push(inr ? inr[f] : 0.0f);
             const analog::Tick end = t_ + frame_;
             while (m_->states * kRow < end) {
+                panel_.tick();
                 aim_pins();
                 m_->run(kChunk);
                 for (int k = 0; k < m_->ncaptures; k++) {
@@ -125,6 +137,7 @@ private:
     double rate_;
     analog::Tick frame_;
     std::unique_ptr<Machine224> m_ = std::make_unique<Machine224>();
+    Panel224 panel_{*m_};
     analog::Input in_[2];
     analog::Output out_[4];
     analog::Vintage vintage_;
