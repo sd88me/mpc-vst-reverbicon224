@@ -17,6 +17,7 @@
 #include <complex>
 #include <cstdint>
 #include <cstring>
+#include <memory>
 
 namespace r224::analog {
 
@@ -33,25 +34,39 @@ public:
             const auto p = m.poles[k];
             if (p.imag() < -1e-9) continue;                    // its conjugate stands for both
             const bool pair = p.imag() > 1e-9;
-            pole_[n_] = p; res_[n_] = m.residues[k] * (pair ? 2.0 : 1.0); n_++;
+            pole_[n_] = p;
+            const std::complex<double> r = m.residues[k] * (pair ? 2.0 : 1.0);
+            rr_[n_] = r.real(); ri_[n_] = r.imag(); n_++;
         }
     }
-    void reset() { for (int k = 0; k < n_; k++) z_[k] = 0; }
+    void reset() { for (int k = 0; k < n_; k++) zr_[k] = zi_[k] = 0; }
+    // complex arithmetic written out on real and imaginary parts: std::complex multiplication calls __muldc3 (NaN / infinity
+    // handling) unless the whole build uses -ffast-math, which costs ~10x here
     void advance(Tick ticks, double u0, double slope) {
-        if (!ticks) return;
+        if (ticks < kGrid / 2) return;
         const Coef &c = coef(ticks);
-        for (int k = 0; k < n_; k++) z_[k] = c.decay[k] * z_[k] + u0 * c.step[k] + slope * c.ramp[k];
+        for (int k = 0; k < n_; k++) {
+            const double zr = zr_[k], zi = zi_[k];
+            zr_[k] = c.dr[k] * zr - c.di[k] * zi + u0 * c.sr[k] + slope * c.rr[k];
+            zi_[k] = c.dr[k] * zi + c.di[k] * zr + u0 * c.si[k] + slope * c.ri[k];
+        }
     }
     double output(double u) const {
         double y = 0;
-        for (int k = 0; k < n_; k++) y += (res_[k] * z_[k]).real();
+        for (int k = 0; k < n_; k++) y += rr_[k] * zr_[k] - ri_[k] * zi_[k];
         return (y + direct_ * u) * scale_;
     }
 private:
-    struct Coef { Tick ticks = 0; std::complex<double> decay[kMaxModes], step[kMaxModes], ramp[kMaxModes]; };
-    const Coef &coef(Tick ticks) {
-        Coef &c = cache_[(ticks * 2654435761ULL >> 7) & (kCache - 1)];
+    struct Coef { Tick ticks = 0; double dr[kMaxModes], di[kMaxModes], sr[kMaxModes], si[kMaxModes], rr[kMaxModes], ri[kMaxModes]; };
+    // The coefficients are for the step length rounded to kGrid ticks (5.4 ns): at 44.1 kHz the host frames and the 224's rows share no
+    // short period, so exact lengths would almost never repeat. The clock itself stays exact (nothing drifts); a step of microseconds
+    // integrated over a length up to 2.7 ns off is a negligible error. At 48 kHz every length is already on the grid.
+    static constexpr Tick kGrid = 3125;
+    const Coef &coef(Tick exact) {
+        const Tick ticks = (exact + kGrid / 2) / kGrid * kGrid;          // 0 for a step under 2.7 ns: the identity (see advance)
+        Coef &c = cache_[(ticks * 0x9E3779B97F4A7C15ULL) >> (64 - 12)];   // Fibonacci hashing into the 4096 entries
         if (c.ticks == ticks) return c;
+        misses++;
         const double T = double(ticks) * kSecondsPerTick;
         for (int k = 0; k < n_; k++) {
             const std::complex<double> p = pole_[k], x = p * T, e = std::exp(x);
@@ -62,16 +77,20 @@ private:
             } else {
                 em1 = e - 1.0; em1x = e - 1.0 - x;
             }
-            c.decay[k] = e; c.step[k] = em1 / p; c.ramp[k] = em1x / (p * p);
+            const std::complex<double> st = em1 / p, rp = em1x / (p * p);
+            c.dr[k] = e.real(); c.di[k] = e.imag(); c.sr[k] = st.real(); c.si[k] = st.imag(); c.rr[k] = rp.real(); c.ri[k] = rp.imag();
         }
         c.ticks = ticks;
         return c;
     }
-    static constexpr int kCache = 256;
+    static constexpr int kCache = 4096;
     int n_ = 0;
-    std::complex<double> pole_[kMaxModes], res_[kMaxModes], z_[kMaxModes];
+    std::complex<double> pole_[kMaxModes];
+    double rr_[kMaxModes] = {}, ri_[kMaxModes] = {}, zr_[kMaxModes] = {}, zi_[kMaxModes] = {};   // residues (weighted) and states
     double scale_ = 1, direct_ = 0;
-    Coef cache_[kCache];
+    std::unique_ptr<Coef[]> cache_ = std::make_unique<Coef[]>(kCache);
+  public:
+    uint64_t misses = 0;
 };
 
 // DAC hold -> output chain. hold() queues a capture (time, value), sample() reads the output at a time.
