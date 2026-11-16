@@ -25,6 +25,7 @@ struct Op {                 // one decoded microinstruction
     uint8_t source;         // OPER: 0 nothing, 1 RR, 2 XREG, 3 ADC
     uint8_t channels;       // OPER: DAC selects A..D (bit 0 = A)
     bool wr_da, wr_xreg, keep_shifting, reset;
+    bool protect;           // the SBC may not access the WCS at this row (an access waits for an unprotected one)
 };
 
 inline unsigned bits(uint32_t w, unsigned hi, unsigned lo) { return w >> lo & ((1u << (hi - lo + 1)) - 1); }
@@ -42,10 +43,10 @@ inline Op decode(uint32_t w, Model model) {
     o.wr_da = oper && bit(w, 7); o.wr_xreg = oper && bit(w, 6); o.keep_shifting = oper && bit(w, 4);
     if (model == Model::L224) {          // the original 224's T&C packs RA, WA, the offset and RESET differently
         o.ra = uint8_t(bits(w, 15, 14)); o.wa = uint8_t(bits(w, 20, 19));
-        o.low = uint16_t(bits(w, 13, 0)); o.reset = bit(w, 22);
+        o.low = uint16_t(bits(w, 13, 0)); o.reset = bit(w, 22); o.protect = bit(w, 21);
     } else {
         o.ra = uint8_t(bits(w, 21, 20)); o.wa = uint8_t(bits(w, 19, 18));
-        o.low = uint16_t(bits(w, 15, 0)); o.reset = oper && bit(w, 3);
+        o.low = uint16_t(bits(w, 15, 0)); o.reset = oper && bit(w, 3); o.protect = bit(w, 22);
     }
     return o;
 }
@@ -58,6 +59,8 @@ struct Dsp {
     Op ops[128] = {};
     // sequencer
     unsigned pc = 0;
+    bool run = true;                 // HALT/ high: the program counter runs (DMEM's run / halt latch)
+    uint32_t microinstruction = 0;   // the word the T&C latched this row (DSP input ports 0 and 1 read its low half)
     Op none = decode(0, Model::L224);
     const Op *oldp = &none;   // the row finishing its multiply (points into ops[], or none)
     Op prev{};                 // a copy of it, so a WCS write during the row cannot change it
@@ -76,8 +79,36 @@ struct Dsp {
     // pins
     unsigned adc_left = 0, adc_right = 0, gain_left = 0, gain_right = 0;
     uint16_t xreg_from_cpu = 0, xreg_to_cpu = 0;
+    // for the T&C's diagnostic monitors (DSP input ports 3-5; the firmware's power-up self-test reads them): the row just run's
+    // finishing microinstruction, its SAT at each ARU edge, and when SAT was last seen (rows)
+    Op diag_old{};
+    uint8_t diag_sat = 0;
+    uint64_t rows = 0, last_sat_row = ~0ULL >> 1;
     // the last row's DAC output: the holds that took a sample, its code and gain
     unsigned dac_channels = 0, dac_code = 0, dac_gain = 0;
+
+    // DSP input ports 3-5, the T&C's monitors, as they stand after the last row (reflecticon's TcDiagnostics; no CPU access holds here,
+    // and the SAT one-shot is its 186 ms window counted in rows of the given rate)
+    uint8_t arithmetic_monitor(double rows_per_second) const {
+        const Op &cur = prev, &old = diag_old;
+        const bool s_c0 = true, s_c1 = cur.keep_shifting;                 // edge 0 shifts; edge 1 loads unless keep-shifting
+        const bool m_c0 = ((old.c32 >> 1) & 1) != (old.c32 & 1), m_c1 = ((old.c10 >> 1) & 1) != (old.c10 & 1);
+        const bool pulse = rows - last_sat_row < uint64_t(0.18612 * rows_per_second);
+        const bool saturation = (diag_sat & 2) || pulse;
+        const uint32_t w = microinstruction;
+        return uint8_t(saturation | 1 << 1 | s_c1 << 2 | s_c0 << 3 | m_c0 << 4 | m_c1 << 5 | (bit(w, 30) != bit(w, 31)) << 6 | !cur.zero << 7);
+    }
+    uint8_t microinstruction_monitor() const {
+        const Op &cur = prev;
+        const bool bit7 = cur.reset;    // the 224 shows RESET in bit 7 (the 224X its protect bit)
+        return uint8_t((cur.wa & 3) | (cur.ra & 3) << 2 | diag_old.neg << 4 | !(cur.op == 1 && cur.source == 3) << 5 | (cur.op != 2) << 6 | bit7 << 7);
+    }
+    uint8_t timing_monitor() const {
+        const uint32_t w = microinstruction;
+        const bool oper = bits(w, 17, 16) == 1, memw = bits(w, 17, 16) == 2;
+        return uint8_t(bit(w, 11) | bit(w, 10) << 1 | bit(w, 9) << 2 | bit(w, 8) << 3 | !(oper && bit(w, 7)) << 4 | !(oper && bit(w, 6)) << 5 |
+                       !(oper && bits(w, 13, 12) == 2) << 6 | !(memw || (oper && bits(w, 13, 12) == 1)) << 7);
+    }
 
     void write_wcs(unsigned row, uint32_t word) { wcs[row & 127] = word; ops[row & 127] = decode(word, model); }
     void load(const uint32_t words[128]) { for (unsigned a = 0; a < 128; a++) write_wcs(a, words[a]); }
@@ -145,7 +176,8 @@ struct Dsp {
         const Op *c = &ops[pc];
         const Op *o = &prev;
         const bool clear_pc = model == Model::L224 ? c->reset : counter_clear;
-        pc = clear_pc ? 0 : ((pc + 1) & 127);
+        microinstruction = wcs[pc];
+        pc = clear_pc ? 0 : run ? ((pc + 1) & 127) : pc;
         restart = counter_clear;
         counter_clear = c->reset;
 
@@ -156,6 +188,9 @@ struct Dsp {
         dac_gain = output_gain;
 
         // edge 0: the old multiply's second shift and partial (c3 c2)
+        uint8_t sat = 0;
+        int32_t raw = acc + partial;
+        sat |= (raw > AccMax || raw < AccMin);
         int32_t sum = settled();
         partial = spart(operand, o->c32, o->neg); operand >>= 2; acc = sum;
 
@@ -170,6 +205,8 @@ struct Dsp {
         if (c->wr_xreg) xreg_to_cpu = bus;
 
         // edge 1: this row's operand loads (or keeps shifting); the old one's last partial (c1 c0)
+        raw = acc + partial;
+        sat |= (raw > AccMax || raw < AccMin) << 1;
         sum = settled();
         partial = spart(operand, o->c10, o->neg);
         operand = c->keep_shifting ? (operand >> 2) : int32_t(int16_t(R[c->ra])) * 8;
@@ -178,10 +215,16 @@ struct Dsp {
         if (c->xfer) rr = int16_t(settled() >> 3);
 
         // edge 2: this row's first partial (c5 c4); ZERO starts a new sum
+        raw = acc + partial;
+        sat |= (raw > AccMax || raw < AccMin) << 2;
         sum = settled();
         partial = spart(operand, c->c54, c->neg); operand >>= 2;
         acc = c->zero ? 0 : sum;
 
+        diag_old = *o;
+        diag_sat = sat;
+        if (sat) last_sat_row = rows;
+        rows++;
         prev = *c;
     }
 };
