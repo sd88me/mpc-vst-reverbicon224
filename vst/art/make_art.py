@@ -336,3 +336,66 @@ engraved_line(d, (1028, FTOP), (1028, 572))
 engraved_line(d, (FX[0] - 24, 579), (FX[1] + 24, 579))
 text(d, ((FX[0] + FX[1]) // 2, 594), "REVERB TIME", CAP, INK, "mm", spacing=1)
 bg.save(os.path.join(here, "bg.png"))
+
+# ------------------------------------------------------------------ the 224's LED readout: seven-segment digit strip and unit LEDs
+# Digit strip (vertical, 24 frames): glyph g = frame % 12 (0-9, blank, '-'), frame >= 12 adds the decimal point. Each frame is a
+# slanted seven-segment LED digit, lit segments glowing red, unlit ones a faint ghost behind the red filter, as on the head.
+SEG_W, SEG_H = 34, 52
+SEGS = {0: "abcdef", 1: "bc", 2: "abdeg", 3: "abcdg", 4: "bcfg", 5: "acdfg", 6: "acdefg", 7: "abc", 8: "abcdefg", 9: "abcdfg", 10: "", 11: "g"}
+
+
+def seg_polys(w, h, t=5.0, slant=0.12):
+    """The seven segments (and DP) of a digit w x h, as polygons, slanted by `slant` (x shift per unit of height)."""
+    x0, x1, y0, ym, y1 = 6.0, w - 9.0, 4.0, h / 2.0, h - 5.0
+    def sk(x, y):
+        return (x + (h - y) * slant, y)
+    def hseg(xa, xb, y):
+        return [sk(xa + t * 0.6, y), sk(xa + t * 1.2, y - t / 2), sk(xb - t * 1.2, y - t / 2), sk(xb - t * 0.6, y), sk(xb - t * 1.2, y + t / 2), sk(xa + t * 1.2, y + t / 2)]
+    def vseg(x, ya, yb):
+        return [sk(x, ya + t * 0.6), sk(x + t / 2, ya + t * 1.2), sk(x + t / 2, yb - t * 1.2), sk(x, yb - t * 0.6), sk(x - t / 2, yb - t * 1.2), sk(x - t / 2, ya + t * 1.2)]
+    return {"a": hseg(x0, x1, y0), "g": hseg(x0, x1, ym), "d": hseg(x0, x1, y1),
+            "f": vseg(x0, y0, ym), "b": vseg(x1, y0, ym), "e": vseg(x0, ym, y1), "c": vseg(x1, ym, y1)}
+
+
+def led_digit(glyph, dp, scale=4):
+    W2, H2 = SEG_W * scale, SEG_H * scale
+    polys = seg_polys(SEG_W, SEG_H)
+    lit = Image.new("L", (W2, H2), 0)
+    ghost = Image.new("L", (W2, H2), 0)
+    dl, dg = ImageDraw.Draw(lit), ImageDraw.Draw(ghost)
+    for s, poly in polys.items():
+        pts = [(x * scale, y * scale) for x, y in poly]
+        (dl if s in SEGS[glyph] else dg).polygon(pts, fill=255)
+    dpx, dpy, r = (SEG_W - 4.5) * scale, (SEG_H - 5.0) * scale, 2.6 * scale
+    (dl if dp else dg).ellipse([dpx - r, dpy - r, dpx + r, dpy + r], fill=255)
+    lit, ghost = lit.resize((SEG_W, SEG_H), Image.LANCZOS), ghost.resize((SEG_W, SEG_H), Image.LANCZOS)
+    out = Image.new("RGBA", (SEG_W, SEG_H), (0, 0, 0, 0))
+    out.paste((90, 10, 8, 255), (0, 0), ghost.point(lambda v: v * 60 // 255))
+    glow = Image.new("RGBA", (SEG_W, SEG_H), (255, 40, 24, 0))
+    glow.putalpha(lit.filter(ImageFilter.GaussianBlur(2.2)).point(lambda v: min(255, v * 150 // 255)))
+    out = Image.alpha_composite(out, glow)
+    core = Image.new("RGBA", (SEG_W, SEG_H), (255, 72, 48, 0))
+    core.putalpha(lit)
+    out = Image.alpha_composite(out, core)
+    hot = Image.new("RGBA", (SEG_W, SEG_H), (255, 170, 140, 0))   # the hot centre of each lit segment
+    hot.putalpha(lit.filter(ImageFilter.MinFilter(3)).point(lambda v: v * 120 // 255))
+    return Image.alpha_composite(out, hot)
+
+
+digits = Image.new("RGBA", (SEG_W, SEG_H * 24), (0, 0, 0, 0))
+for fr in range(24):
+    digits.paste(led_digit(fr % 12, fr >= 12), (0, fr * SEG_H))
+digits.save(os.path.join(here, "seg_digit.png"))
+
+# Unit LEDs (vertical, 5 frames: none, SEC, MS, HZ, KHZ): four small LEDs in a column with their legends, the one lit glowing
+UW, UH = 64, 56
+UNITS = ("SEC", "MS", "HZ", "KHZ")
+units = Image.new("RGBA", (UW, UH * 5), (0, 0, 0, 0))
+for fr in range(5):
+    im = Image.new("RGBA", (UW, UH), (0, 0, 0, 0))
+    for i, u in enumerate(UNITS):
+        cy = 7 + i * 14
+        im.alpha_composite(led_layer((UW, UH), 7, cy, 3, fr == i + 1))
+        text(ImageDraw.Draw(im), (16, cy), u, font(TIT_SB, 11), (255, 96, 76) if fr == i + 1 else (120, 34, 28), "lm")
+    units.paste(im, (0, fr * UH))
+units.save(os.path.join(here, "seg_units.png"))

@@ -26,5 +26,6 @@ vst/art/meter.png
 vst/art/key_*.png
 vst/art/tog_*.png
 vst/art/small_*.png
+vst/art/seg_*.png
 # local-only tooling
 tools/package_vst2.py

@@ -162,6 +162,38 @@
    "max": 5,
    "default": 0,
    "display": "int"
+  },
+  {
+   "key": "disp_d2",
+   "name": "Digit 1",
+   "min": 0,
+   "max": 23,
+   "default": 10,
+   "display": "int"
+  },
+  {
+   "key": "disp_d1",
+   "name": "Digit 2",
+   "min": 0,
+   "max": 23,
+   "default": 10,
+   "display": "int"
+  },
+  {
+   "key": "disp_d0",
+   "name": "Digit 3",
+   "min": 0,
+   "max": 23,
+   "default": 10,
+   "display": "int"
+  },
+  {
+   "key": "disp_unit",
+   "name": "Unit",
+   "min": 0,
+   "max": 4,
+   "default": 0,
+   "display": "int"
   }
  ]
 }

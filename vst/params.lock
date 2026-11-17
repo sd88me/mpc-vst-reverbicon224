@@ -16,3 +16,7 @@ out_r
 status
 meter_l
 meter_r
+disp_d2
+disp_d1
+disp_d0
+disp_unit

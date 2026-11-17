@@ -48,6 +48,7 @@ uint32_t crc32_of(const uint8_t *b, size_t n) {
 
 /* the 224's slider slots (0-5 the pots, 6 DIFFUSION on the SHIFT page): their parameters and names on the display line */
 const int SLIDER_PARAM[7] = {P_BASS, P_MID, P_XOVER, P_TREBLE, P_DEPTH, P_PREDELAY, P_DIFF};
+const char *const PROGRAM_NAME[6] = {"SMALL HALL B", "VOCAL PLATE", "LARGE HALL B", "ACOUSTIC CHAMBER", "PERC PLATE A", "SMALL HALL A"};
 const char *const SLIDER_NAME[7] = {"BASS", "MID", "XOVER", "TREBLE", "DEPTH", "PRE-DELAY", "DIFFUSION"};
 
 struct Fx {
@@ -246,6 +247,25 @@ std::string slider_text(const Fx *f, int slot) {
     return t;
 }
 
+/* the digits as the 224 lights them for the shown slider's text: each a strip frame (0-9, 10 blank, 11 '-'; +12 with the decimal
+ * point), right-aligned in three places; unit 0 none, 1 SEC, 2 MS, 3 HZ, 4 KHZ. Blank until a slider has moved. */
+void led_readout(const Fx *f, int dig[3], int &unit) {
+    dig[0] = dig[1] = dig[2] = 10;
+    unit = 0;
+    if (f->state.load() != 2 || f->shown < 0) return;
+    const std::string t = slider_text(f, f->shown);
+    const size_t sp = t.find(' ');
+    const std::string num = t.substr(0, sp), u = sp == std::string::npos ? "" : t.substr(sp + 1);
+    static const char *const UNITS[4] = {"SEC", "MS", "HZ", "KHZ"};
+    for (int i = 0; i < 4; i++) if (u == UNITS[i]) unit = i + 1;
+    int frames[8], k = 0;
+    for (char c : num) {
+        if (c == '.') { if (k) frames[k - 1] += 12; continue; }
+        if (k < 8) frames[k++] = c >= '0' && c <= '9' ? c - '0' : c == '-' ? 11 : 10;
+    }
+    for (int i = 0; i < 3 && i < k; i++) dig[2 - i] = frames[k - 1 - i];
+}
+
 int get_param(void *inst, const char *key, char *buf, int n) {
     Fx *f = (Fx *)inst;
     for (int i = 0; i < NP; i++)
@@ -263,10 +283,18 @@ int get_param(void *inst, const char *key, char *buf, int n) {
                         m.mem[0x3f3f], (int)m.dsp.run, (int)f->rev->panel().idle(), m.mem[0x3f67], m.mem[0x3f66], m.mem[0x3f68], m.mem[0x3f69],
                         m.mem[0x3f6a], m.mem[0x3f6d], m.mem[0x3f6e]);
     }
-    if (!strcmp(key, "status")) {        /* once running, the 224's display: the last slider moved, as its select button would show it */
-        if (f->state.load() == 2 && f->shown >= 0)
-            return snprintf(buf, n, "%s  %s", SLIDER_NAME[f->shown], slider_text(f, f->shown).c_str());
-        return snprintf(buf, n, "%s", f->status);
+    if (!strcmp(key, "status")) {        /* once running: the program, and the slider the digits show */
+        if (f->state.load() != 2) return snprintf(buf, n, "%s", f->status);
+        if (f->shown < 0) return snprintf(buf, n, "%s", PROGRAM_NAME[program_of(f)]);
+        return snprintf(buf, n, "%s  -  %s", PROGRAM_NAME[program_of(f)], SLIDER_NAME[f->shown]);
+    }
+    if (!strncmp(key, "disp_", 5)) {      /* the LED readout: three digit frames and the unit LED (vst/art/make_art.py strips) */
+        int dig[3], unit;
+        led_readout(f, dig, unit);
+        if (!strcmp(key, "disp_d2")) return snprintf(buf, n, "%d", dig[0]);
+        if (!strcmp(key, "disp_d1")) return snprintf(buf, n, "%d", dig[1]);
+        if (!strcmp(key, "disp_d0")) return snprintf(buf, n, "%d", dig[2]);
+        if (!strcmp(key, "disp_unit")) return snprintf(buf, n, "%d", unit);
     }
     if (!strcmp(key, "meter_l")) return snprintf(buf, n, "%d", f->meter[0]);
     if (!strcmp(key, "meter_r")) return snprintf(buf, n, "%d", f->meter[1]);
