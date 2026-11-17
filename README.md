@@ -1,105 +1,107 @@
 # Reverbicon 224
 
-![Reverbicon 224 on an Akai Force](docs/img/reverbicon224.png)
+![Reverbicon 224 on an MPC Live III](docs/img/reverbicon224.png)
 
-A Lexicon 224 (original, firmware v4.4) style reverb as a native effect plugin for Akai MPC OS standalone devices: Force and
-MPC Live / One / X / Key (armv7), and MPC Live III (aarch64). It has the six original programs, the 224's bass, mid, crossover,
-treble decay, depth, pre-delay and diffusion controls, Dirt, Input and Mix faders, Mode Enhancement, Decay Optimisation and the
-four output pairs. The touch skin is drawn after the original remote: program keys with LEDs, a red LED display, a live headroom
-meter, black-capped faders. Sixteen presets show in MPC's PRESET menu, and the Q-Links follow the faders.
+A Lexicon 224 (original, firmware v4.4) as a native effect plugin for Akai MPC OS standalone devices. It does not imitate the
+224's sound: it runs the 224's **own firmware** on an emulated machine, the way the original hardware did:
 
-The engine is [cineolX](https://github.com/temaniak/cineolX)'s native 224 core (itself validated against
-[Reflexion](https://github.com/joelanders/reflexion-224)); this repo is the MPC plugin around it.
+- the 8080 control computer executing the v4.4 ROMs, with the front panel the firmware reads (program keys, sliders, SHIFT page);
+- the DSP the firmware programs, row by row, with its arithmetic, delay memory and timing;
+- the 12-bit gain-ranging converters and the input and output boards' analog filters.
+
+So the six programs, the way the sliders behave, the values on the display, and the sound are the firmware's. The plugin works
+the 224's front panel for you: picking a program presses its key, moving a slider moves the pot, and the firmware takes it.
+
+What you get on the screen: the six program keys, the BASS / MID decay, CROSSOVER, TREBLE DECAY, DEPTH, PRE-DELAY and DIFFUSION
+sliders, Mode Enhancement and Decay Optimization, the four output pairs, Dirt, Input and Mix, a live headroom meter, and the
+224's red **LED readout**: the last slider you moved, as the firmware's display shows it ("2.6 SEC", "8.80 KHZ", "024 MS"). Sixteen
+presets in MPC's PRESET menu; the Q-Links follow the sliders.
 
 ## You supply the ROMs
 
 The plugin needs the original **Lexicon 224 v4.4 ROM1 to ROM5** (2048-byte EPROM images, one per chip). They are not included
 and never will be: you need the originals from a 224 you own. Other firmware versions do not work.
 
-Put the five files in the plugin's **`Content/ROMs/`** folder. The next time the plugin loads it builds its program bank **by
-itself, in the background** (a helper program, `bankhelper-<arch>`, starts with the plugin and runs at low priority), and the
-display shows what it is doing. You do not have to restart anything: the plugin loads the bank the moment it is ready.
+Put the five files in the plugin's **`Content/ROMs/`** folder (or use the desktop installer's "Your ROMs and files" step, which checks
+each file and copies it there). The plugin recognises each chip by its checksum, so the file names do not matter. When it loads it
+starts the firmware (under a second on a Live III); until then it passes the audio through.
 
 | Display says | Meaning |
 |---|---|
-| `ADD ROMS TO CONTENT/ROMS (n/5)` | not enough 2048-byte files in the folder yet |
-| `BUILDING BANK n%` | the helper is working; the plugin passes audio through unchanged meanwhile |
-| `BANK READY` | done; the bank is saved as `Content/programs-v44.bank224` and later loads are instant |
-| `NEED ALL FIVE V4.4 ROMS (ROM1-5)` | the files are not the five v4.4 chips (a wrong version, or a duplicate) |
-| `BANK HELPER MISSING` | `Content/bankhelper-<arch>` is not there or not executable |
+| `ADD ROMS TO CONTENT/ROMS (n/5)` | not all five chips are in the folder yet |
+| `STARTING` | the firmware is booting |
+| the program name | running |
+| `ROMS NOT RECOGNISED` | five files, but the firmware did not come up (not the v4.4 chips) |
 
-How long the first build takes (measured, with the device otherwise idle and MPC playing normally):
+## Controls
 
-| Device | Time |
+| Control | What it is |
 |---|---|
-| MPC Live III | about 5.6 minutes (337 s) |
-| Force | about 17 minutes (1020 s) |
+| PROGRAM 1-6 | Small Hall B, Vocal Plate, Large Hall B, Acoustic Chamber, Percussion Plate A, Small Hall A. A change mutes the reverb for about 50 ms while the firmware loads the program into the DSP, as on the hardware. |
+| BASS, MID | reverb time below and above the crossover, 0.6 to 70 seconds |
+| CROSSOVER | 100 Hz to 10.9 kHz |
+| TREBLE DECAY | the high-frequency rolloff, 100 Hz to 10.9 kHz |
+| DEPTH | 00 to 71 |
+| PRE-DELAY | covers the loaded program's whole range, as the 224's slider does: halls 24-152 ms, plates 0-107 ms, Acoustic Chamber 25-255 ms |
+| DIFFUSION | 01 to 63 (the 224's SHIFT page) |
+| MODE ENH, DECAY OPT | Mode Enhancement and Decay Optimization (the 224's PROG 7 and 8) |
+| OUTPUTS | which two of the 224's four outputs (A-D) you hear on the left and the right |
+| DIRT | our own addition, not from the 224: converter hiss, small gain-range mismatches, a soft input limit. Off at 0. |
+| INPUT, MIX | the level into the 224 (dB) and dry/wet |
 
-The touch screen stays responsive while it runs. Several plugin instances share one build (a lock keeps a second helper from
-starting). A bank built on one device is byte-identical to one built on a PC or another device, so you may also copy
-`programs-v44.bank224` between machines. Delete it to rebuild.
+Slider readouts show what the firmware stored and displays, so they move in the 224's own steps.
 
-### With the desktop installer
+## Devices
 
-The desktop installer's **Your ROMs and files** step ([mpc-vst-plugins](https://github.com/sd88me/mpc-vst-plugins) PR #668,
-`user_files` in the plugin manifest) reads `release/user-files.json` from this repo. You pick your ROM files on the computer, it
-checks each one (right size and start, "ROM3 (Lexicon 224 v4.4): looks right"), and copies the good ones into
-`Content/ROMs/` on the device. It cannot confirm the exact v4.4 chip (the plugin does that when it builds the bank, and says so on
-its display). `release/user-files.json` is given to `release.py` with `--user-data Content/ROMs --user-files
-release/user-files.json`; `test/user_files_check.py` checks it against your ROMs.
+| Device | Status |
+|---|---|
+| MPC Live III (aarch64) | tested: about 18% of one core (p99 23%, worst block 34% of a 128-frame block at 44.1 kHz) |
+| Force and 32-bit MPCs (armv7) | built and checked offline (output identical to the 64-bit build), **not yet tried on a device**. Expect roughly half a core: one instance. |
 
 ## Build
 
-Needs Docker, Python 3 with Pillow, and a checkout of
-[mpc-vst-plugins](https://github.com/sd88me/mpc-vst-plugins) next to this one (or `MPC_VST=/path`).
+Needs Docker, Python 3 with Pillow, and a checkout of [mpc-vst-plugins](https://github.com/sd88me/mpc-vst-plugins) next to this one
+(or `MPC_VST=/path`).
 
 ```
-tools/fetch_cineolx.sh          # cineolX core + artwork at a pinned commit (not redistributed here)
-tools/build_helpers.sh          # bankhelper-x86_64 / -armv7 / -aarch64
-python3 vst/art/make_art.py     # skin artwork
-vst/build.sh                    # skin, reverbicon224.so (armv7) and build/aarch64/reverbicon224.so, plugin-list entry
+python3 vst/art/make_art.py     # skin artwork (all drawn in code)
+vst/build.sh                    # skin, reverbicon224.so (armv7) and build/aarch64/reverbicon224.so
+python3 tools/package_vst2.py   # dist/<vendor> - VST - Reverbicon 224/ (MPC OS 3.10.1 VST2 Plugins folder)
 ```
 
-Tests (none need a device except the bench):
+Tests (the emulator's are checked against reflecticon-224; the ones marked ROMs need yours):
 
 ```
-<mpc-vst-plugins>/tools/test_port.sh vst/vst.json            # x86 host test (ASan), also `... aarch64`
-test/import_test.cpp                                          # the whole ROM-import flow against the x86 helper; needs your ROMs, ~3 min
-test/user_files_check.py "<folder with your ROM1-5>"          # the installer's ROM rules
-<mpc-vst-plugins>/tools/bench.sh <so> <device-ip>             # CPU on a device (put the bank in /tmp/Content first)
+<mpc-vst-plugins>/tools/test_port.sh vst/vst.json [aarch64]  # host test of the plugin (ASan)
+test/dsp224_compare.cpp       # our DSP against reflecticon's, bit-exact
+test/i8080_lockstep.cpp       # our 8080 against reflecticon's, instruction by instruction (ROMs)
+test/machine224_portdiff.cpp  # the whole machine's port traffic against reflecticon's host (ROMs)
+test/analog224_compare.cpp    # the analog boards against reflecticon's chains
+test/panel224_test.cpp        # the front panel: programs, sliders, DIFFUSION, toggles (ROMs)
+test/render_test.c            # every program through the plugin, CPU per block (ROMs)
+test/slider_sweep.cpp, test/display_sweep.cpp   # regenerate src/slider_tables224.hpp from the firmware (ROMs)
 ```
 
-## Install by hand (Force, MPC 3.x)
+## How it works
 
-1. Copy `vst/build/skin/sd88me - VST - Reverbicon 224/` to `/sdcard/Synths/` on the device. Put the matching
-   `reverbicon224.so` in that folder (armv7 for the Force and Gen 1; `build/aarch64/` for a Live III), the `bankhelper-<arch>`
-   file in its `Content/` folder (executable), and your ROMs in `Content/ROMs/`.
-2. With MPC stopped, add `vst/build/pluginlist-entry.xml` to the `pluginList-arm` list in `MPC.settings` and start MPC again.
-   Edit it as whole XML elements and keep the line endings: a broken list stops MPC from starting.
+| File | |
+|---|---|
+| `src/i8080.hpp` | the 8080 |
+| `src/dsp224.hpp` | the DSP: the 224's microinstructions decoded once, rows run from a table |
+| `src/machine224.hpp` | the control computer: memory map, the DSP's ports and control store, the front panel's 8255, wait states |
+| `src/analog224.hpp` | input and output boards (exact modal integration of reflecticon's pole/residue chains), converters, the Dirt layer |
+| `src/reverb224.hpp` | host audio in and out at any rate, each input sampled at its converter's instant |
+| `src/panel224.hpp` | the front-panel operator: key presses and slider moves the way a hand makes them |
+| `src/engine.cpp` | the plugin: ROM loading, the boot thread, parameters, display |
 
-Updating later: replace only the skin, the `.so` and the helper; **keep `Content/`** (your ROMs and the built bank). A changed
-skin only loads after MPC restarts.
+`docs/ENGINE-PLAN.md` has the design and the measurements behind it.
 
-## Measured
+## Credits and licence
 
-| Device | Mean | p99 | Worst block |
-|---|---|---|---|
-| MPC Live III (aarch64) | 5.1% | 5.3% | 32% (first block) |
-| Force (armv7) | 14.5% | 19.4% | 23% |
+- [**reflecticon-224**](https://github.com/joelanders/reflecticon-224) by Joe Landers: the reference this emulator is built and
+  tested against, the front-panel recipe and RAM layout, the display decoding, and the analog boards' filter data and peripheral
+  models (`src/third_party/reflecticon/`, unchanged). AGPL-3.0.
+- **Titillium Web** fonts in `vst/art/fonts/`: SIL Open Font License (`OFL.txt`).
+- Lexicon and 224 are named only to say what is emulated; this project is not affiliated with or endorsed by Lexicon.
 
-(% of one 128-frame block at 44.1 kHz; `tools/bench.sh` of mpc-vst-plugins.) The Force figure suits one or two instances.
-
-## Status
-
-Working on both devices: loading, sound, skin, presets, Q-Links, project reload, ROM import (both devices, bank identical), headroom
-meter. Not done yet: the 22 224XL programs; a crossfade when switching programs (they cut the old tail); a bit-exact comparison of
-the ARM output against x86. `docs/HANDOFF.md` has the open items and what a public release still needs.
-
-## Third-party material (not included)
-
-- **cineolX** (the engine and artwork) and **Reflexion** (its reference emulator) have no licence yet. `tools/fetch_cineolx.sh`
-  downloads them for your own build; nothing from them is committed here. Ask their authors before redistributing a build.
-- **Titillium Web** fonts in `vst/art/fonts/` are under the SIL Open Font License (`OFL.txt`).
-- Lexicon and 224 are names used only to say what is emulated; this is not affiliated with or endorsed by Lexicon.
-
-The files in this repository are MIT licensed (`LICENSE`).
+Reverbicon 224 is licensed under the **GNU Affero General Public License v3.0** (`LICENSE`).

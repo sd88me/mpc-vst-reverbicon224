@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Reverbicon 224 skin art, rendered to look like the original Lexicon 224 remote with real lighting: an ivory panel in a black
 frame (light from the top left: frame shadow on the plate, recessed display with glass reflection), black keys and fader caps
-graded from cineolX's own photographic sprites (keysprite.png, fadercap.png) so their bevel shading is kept, soft cast shadows,
+drawn entirely in code (keys, fader caps, LED digits), soft cast shadows,
 recessed slots, glowing LED lenses. Fixed text is baked into bg.png; live text (algorithm, status, fader values) and the meter
 are MPC's, laid on top by layout.conf.
 Outputs (run from vst/art): bg.png, key_off/on.png, small_off/on.png, tog_off/on.png, cap.png, track.png, meter.png."""
@@ -83,20 +83,6 @@ def led_layer(size, cx, cy, r, on):
 
 
 # ------------------------------------------------------------------ keys (3D sprite, LED above, cast shadow)
-KEY = Image.open(os.path.join(here, "keysprite.png")).convert("RGBA")
-KEY = KEY.crop(KEY.split()[-1].getbbox())
-KEY_BLACK = grade_black(KEY)
-
-
-def slate(sprite, hi=100, gamma=2.3, lo=16):
-    """The key sprite graded to the blue-grey plastic of the real keys (its bevel lighting is kept)."""
-    g = grade_black(sprite, hi=hi, gamma=gamma, lo=lo)
-    r, gr, bl, a = g.split()
-    return Image.merge("RGBA", (r.point(lambda v: max(0, v - 4)), gr, bl.point(lambda v: min(255, v + 12)), a))
-
-
-CAP_SLATE = slate(KEY)
-
 
 def key_image(cw, hw, hh, hx, band, slope, led_r, on):
     """A key drawn after the 224's: one slate housing in three zones -- a flat dark band with the LED, a sloped lighter bevel
@@ -145,19 +131,32 @@ for on in (False, True):
     key_image(46, 44, 40, 1, 13, 5, 3, on).save(os.path.join(here, "small_%s.png" % n))
 
 # ------------------------------------------------------------------ fader cap (photographic sprite, black plastic, pale index bar)
-CAPSRC = Image.open(os.path.join(here, "fadercap.png")).convert("RGBA")
-CAPSRC = CAPSRC.crop(CAPSRC.split()[-1].getbbox())
-cl = CAPSRC.convert("L")
-cw0, ch0 = CAPSRC.size
-bar = Image.new("L", CAPSRC.size, 0)
-bx0, bx1, by0, by1 = int(cw0 * 0.03), int(cw0 * 0.97), int(ch0 * 0.50), int(ch0 * 0.65)
-bar.paste(cl.crop((bx0, by0, bx1, by1)).point(lambda v: 255 if v < 100 else 0), (bx0, by0))
-body = grade_black(CAPSRC, hi=78)
-pale = CAPSRC.convert("L").point(lambda v: int(176 + v * 0.45))
-palergba = Image.merge("RGBA", (pale, pale, pale.point(lambda v: v - 6), CAPSRC.split()[-1]))
-capimg = Image.composite(palergba, body, bar.filter(ImageFilter.GaussianBlur(1.2)))
+def fader_cap(w, h, S=6):
+    """The black fader cap, drawn: a rounded block lit from the top left (a lighter top face, a darker front), and the pale index line across the middle."""
+    W2, H2 = w * S, h * S
+    im = Image.new("RGBA", (W2, H2), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle([0, 0, W2 - 1, H2 - 1], 7 * S, fill=(14, 14, 15, 255))                    # body edge
+    m = 2 * S
+    face = Image.new("RGBA", (W2 - 2 * m, H2 - 2 * m), (0, 0, 0, 0))
+    fd = ImageDraw.Draw(face)
+    for yy in range(face.height):                                                               # top-lit face
+        t = yy / face.height
+        v = int(40 - 22 * t)
+        fd.line([(0, yy), (face.width, yy)], fill=(v, v, v + 2, 255))
+    fm = Image.new("L", face.size, 0)
+    ImageDraw.Draw(fm).rounded_rectangle([0, 0, face.width - 1, face.height - 1], 5 * S, fill=255)
+    im.paste(face, (m, m), fm)
+    d.rounded_rectangle([m, m, W2 - m - 1, m + 2 * S], 4 * S, fill=(78, 78, 82, 255))            # lit top lip
+    d.line([(m, m + 3 * S), (m, H2 - m - 3 * S)], fill=(72, 72, 76, 255), width=S)              # lit left edge
+    by = int(H2 * 0.55)
+    d.rectangle([m, by - int(1.6 * S), W2 - m - 1, by + int(1.6 * S)], fill=(214, 212, 202, 255))  # pale index line
+    d.line([(m, by + int(1.6 * S) + S), (W2 - m - 1, by + int(1.6 * S) + S)], fill=(0, 0, 0, 160), width=S)
+    return im.resize((w, h), Image.LANCZOS)
+
+
 CAPW, CAPH, CANW, CANH = 46, 42, 60, 64
-spr = capimg.resize((CAPW, CAPH), Image.LANCZOS)
+spr = fader_cap(CAPW, CAPH)
 c = Image.new("RGBA", (CANW, CANH), (0, 0, 0, 0))
 c.alpha_composite(cast_shadow(spr, (CANW - CAPW) // 2 + 4, (CANH - CAPH) // 2 + 6, 3.5, 0.65, (CANW, CANH)))
 c.alpha_composite(spr, ((CANW - CAPW) // 2, (CANH - CAPH) // 2))

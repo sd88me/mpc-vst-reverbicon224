@@ -36,7 +36,7 @@ Reflexion is now `joelanders/reflecticon-224`, **AGPL-3.0**, and runs the 224's 
    the LARC / panel inputs reflecticon already maps). Redraw the two cineolX sprites (keys, fader caps).
 
 ## Licence
-AGPL-3.0 for the repo (MIT today), as the roadmap already plans: the code is ours, but we read reflecticon-224 (AGPL) closely and test against
+AGPL-3.0 for the repo (done 2026-11-17), as the roadmap already plans: the code is ours, but we read reflecticon-224 (AGPL) closely and test against
 it, and could reuse pieces of it directly (its 8080 interface, the panel / LARC mapping) with attribution. No ROMs, no bank, nothing of
 cineolX's in the release.
 

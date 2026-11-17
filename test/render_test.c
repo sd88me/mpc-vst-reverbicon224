@@ -3,6 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <algorithm>
 extern "C" {
 #include "engine.h"
 }
@@ -33,10 +34,17 @@ int main(int argc, char **argv) {
         struct timespec a, c;
         clock_gettime(CLOCK_MONOTONIC, &a);
         int blocks = 44100 * 6 / 128;
+        static double bt[4096]; int nb = 0; double worst = 0;
         for (int blk = 0; blk < blocks; blk++) {
             memset(in, 0, sizeof in);
             if (blk == 200) in[0] = in[1] = 20000;
+            struct timespec b0, b1;
+            clock_gettime(CLOCK_MONOTONIC, &b0);
             e->process(f, in, out, 128);
+            clock_gettime(CLOCK_MONOTONIC, &b1);
+            const double us = (b1.tv_sec - b0.tv_sec) * 1e6 + (b1.tv_nsec - b0.tv_nsec) * 1e-3;
+            if (us > worst) worst = us;
+            if (nb < 4096) bt[nb++] = us;
             for (int i = 0; i < 256; i++) {
                 double v = out[i];
                 if (blk < 200) e0 += v * v;
@@ -48,6 +56,8 @@ int main(int argc, char **argv) {
         clock_gettime(CLOCK_MONOTONIC, &c);
         t0 = (c.tv_sec - a.tv_sec) + (c.tv_nsec - a.tv_nsec) * 1e-9;
         e->get_param(f, "debug", b, sizeof b); printf("  %s\n", b);
+        std::sort(bt, bt + nb);
+        printf("  block: p99 %.1f%%  worst %.1f%% of the 2902 us budget\n", 100 * bt[nb * 99 / 100] / 2902.0, 100 * worst / 2902.0);
         printf("prog %d: pre-impulse %.0f  early tail %.3g  late tail %.3g  peak %.0f  cpu %.2f%%\n", prog, e0, e1, e2, peak, 100 * t0 / 6.0);
     }
     e->destroy(f);
