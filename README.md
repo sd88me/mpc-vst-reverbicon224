@@ -22,8 +22,8 @@ presets in MPC's PRESET menu; the Q-Links follow the sliders.
 The plugin needs the original **Lexicon 224 v4.4 ROM1 to ROM5** (2048-byte EPROM images, one per chip). They are not included
 and never will be: you need the originals from a 224 you own. Other firmware versions do not work.
 
-Put the five files in the plugin's **`Content/ROMs/`** folder (or use the desktop installer's "Your ROMs and files" step, which checks
-each file and copies it there). The plugin recognises each chip by its checksum, so the file names do not matter. When it loads it
+Put the five files in the plugin folder's **`Content/ROMs/`** (see [Install](#install) for where the plugin folder is and how to
+add them). The plugin recognises each chip by its checksum, so the file names do not matter. When it loads it
 starts the firmware (under a second on a Live III); until then it passes the audio through.
 
 | Display says | Meaning |
@@ -32,6 +32,29 @@ starts the firmware (under a second on a Live III); until then it passes the aud
 | `STARTING` | the firmware is booting |
 | the program name | running |
 | `ROMS NOT RECOGNISED` | five files, but the firmware did not come up (not the v4.4 chips) |
+
+## Install
+There are two plugin formats. Use one of them, not both: they are the same plugin.
+
+| Plugin format | Zip | How it is installed | Plugin folder |
+|---|---|---|---|
+| **SDK format** (MPC OS 3.10.1 or later) | `Reverbicon-224-<version>-mpc-sdk.zip` | By hand: unzip it, copy the folder `sd88me - VST - Reverbicon 224` into `VST2 Plugins` at the root of a drive the MPC can see, turn on **Preferences > Enhancements (Beta) > Enable Enhancements** and **External Plugin Support**, and restart the MPC | `VST2 Plugins/sd88me - VST - Reverbicon 224/` on that drive |
+| **Older format** (plugins listed in `MPC.settings`) | `Reverbicon-224-<version>-mpc-aarch64.zip` (Live III and other 64-bit MPCs) or `-mpc-armv7.zip` (Force and other 32-bit MPCs) | With the **OpenMPC Plugin Manager**, or by hand over SSH with the zip's `install.sh` (needs root access; on a Live III add `-t /nvme/Synths`) | `sd88me - VST - Reverbicon 224/` in the Synths folder it was installed to |
+
+The zips are on [Releases](https://github.com/sd88me/mpc-vst-reverbicon224/releases).
+
+### Adding the ROMs
+The five files go in the plugin folder's `Content/ROMs/`, for example `VST2 Plugins/sd88me - VST - Reverbicon 224/Content/ROMs/`.
+
+| Plugin format | How to add the ROMs |
+|---|---|
+| SDK format | By hand: over USB, or with the MPC's file browser. |
+| Older format, with the OpenMPC Plugin Manager | Use its **Your ROMs and files** step: it checks each file and copies it into `Content/ROMs/`. Or copy them by hand. |
+| Older format, with `install.sh` | By hand: with `scp`, over USB, or with the MPC's file browser. |
+
+### Upgrading
+- **SDK format:** copy the new folder over the old one (merge it, don't delete the old folder first) so `Content/ROMs/` stays.
+- **Older format:** the OpenMPC Plugin Manager and `install.sh` upgrade in place and keep `Content/ROMs/`.
 
 ## Controls
 
