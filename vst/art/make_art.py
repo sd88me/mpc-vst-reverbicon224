@@ -386,15 +386,15 @@ for fr in range(24):
     digits.paste(led_digit(fr % 12, fr >= 12), (0, fr * SEG_H))
 digits.save(os.path.join(here, "seg_digit.png"))
 
-# Unit LEDs (vertical, 5 frames: none, SEC, MS, HZ, KHZ): four small LEDs in a column with their legends, the one lit glowing
-UW, UH = 64, 56
+# Unit LEDs (5 frames: none, SEC, MS, HZ, KHZ): four LEDs in a 2x2 grid with their legends, the one lit glowing
+UW, UH = 104, 56
 UNITS = ("SEC", "MS", "HZ", "KHZ")
 units = Image.new("RGBA", (UW, UH * 5), (0, 0, 0, 0))
 for fr in range(5):
     im = Image.new("RGBA", (UW, UH), (0, 0, 0, 0))
     for i, u in enumerate(UNITS):
-        cy = 7 + i * 14
-        im.alpha_composite(led_layer((UW, UH), 7, cy, 3, fr == i + 1))
-        text(ImageDraw.Draw(im), (16, cy), u, font(TIT_SB, 11), (255, 96, 76) if fr == i + 1 else (120, 34, 28), "lm")
+        cx, cy = 8 + (i % 2) * 52, 14 + (i // 2) * 28
+        im.alpha_composite(led_layer((UW, UH), cx, cy, 4, fr == i + 1))
+        text(ImageDraw.Draw(im), (cx + 9, cy), u, font(TIT_B, 17), (255, 96, 76) if fr == i + 1 else (120, 34, 28), "lm")
     units.paste(im, (0, fr * UH))
 units.save(os.path.join(here, "seg_units.png"))
