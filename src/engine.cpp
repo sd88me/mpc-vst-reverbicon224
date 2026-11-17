@@ -46,6 +46,10 @@ uint32_t crc32_of(const uint8_t *b, size_t n) {
     return ~c;
 }
 
+/* the 224's slider slots (0-5 the pots, 6 DIFFUSION on the SHIFT page): their parameters and names on the display line */
+const int SLIDER_PARAM[7] = {P_BASS, P_MID, P_XOVER, P_TREBLE, P_DEPTH, P_PREDELAY, P_DIFF};
+const char *const SLIDER_NAME[7] = {"BASS", "MID", "XOVER", "TREBLE", "DEPTH", "PRE-DELAY", "DIFFUSION"};
+
 struct Fx {
     float p[NP];
     std::string dir;
@@ -62,6 +66,7 @@ struct Fx {
     int sent[NP];                    /* what the panel was last asked for (-1: never) */
     float mix_s = 1;
     uint32_t fw_sig = 0;
+    int shown = -1;                  /* the slider the display line shows (the last one moved), -1: none yet */
     float bl[128], br[128], ol[128], orr[128];
 };
 
@@ -206,7 +211,10 @@ void set_param(void *inst, const char *key, const char *val) {
     for (int i = 0; i < NP; i++)
         if (!strcmp(key, KEYS[i])) {
             const float v = (float)atof(val);
-            if (v != f->p[i]) f->rev_no++;      /* the skin redraws text (program name, values) when display_rev moves */
+            if (v != f->p[i]) {
+                f->rev_no++;                    /* the skin redraws text (program name, values) when display_rev moves */
+                for (int slot = 0; slot < 7; slot++) if (SLIDER_PARAM[slot] == i) f->shown = slot;
+            }
             f->p[i] = v; f->dirty = true; return;
         }
 }
@@ -220,24 +228,33 @@ void watch_firmware(Fx *f) {
     if (sig != f->fw_sig) { f->fw_sig = sig; f->rev_no++; }
 }
 
-/* the firmware's stored step once running (what the 224's display shows), else the parameter's */
-int stored_or(const Fx *f, int slot, int fallback) {
-    if (!f->ready.load(std::memory_order_acquire)) return fallback;
-    return slot == 6 ? f->rev->panel().stored_diffusion() : f->rev->panel().stored(slot);
+/* the firmware's stored step once running, else the one the parameter asks for */
+int stored_step(const Fx *f, int slot) {
+    if (f->ready.load(std::memory_order_acquire)) return slot == 6 ? f->rev->panel().stored_diffusion() : f->rev->panel().stored(slot);
+    const int v = (int)lrintf(f->p[SLIDER_PARAM[slot]]);
+    return slot == 5 ? predelay_target(program_of(f), v) : v;
+}
+
+/* the 224's display text for a slider's stored step (src/slider_tables224.hpp): "2.6 SEC", "8.80 KHZ", "21", "024 MS" */
+std::string slider_text(const Fx *f, int slot) {
+    const int v = stored_step(f, slot);
+    char t[16];
+    if (slot <= 1) return r224::kTimeText[std::clamp(v, 0, 31)];
+    if (slot <= 3) return r224::kFreqText[std::clamp(v, 0, 31)];
+    if (slot == 5) snprintf(t, sizeof t, "%03d MS", v);
+    else snprintf(t, sizeof t, "%02d", v);
+    return t;
 }
 
 int get_param(void *inst, const char *key, char *buf, int n) {
     Fx *f = (Fx *)inst;
     for (int i = 0; i < NP; i++)
         if (!strcmp(key, KEYS[i])) return snprintf(buf, n, "%g", (double)f->p[i]);   /* "2", not "2.000": option lists take only a whole number */
-    using r224::kTimes; using r224::kFrequencies;
-    auto idx = [](int v) { return std::clamp(v, 0, 31); };
-    if (!strcmp(key, "bass_display")) return snprintf(buf, n, "%.1f s", (double)kTimes[idx(stored_or(f, 0, (int)f->p[P_BASS]))]);
-    if (!strcmp(key, "mid_display")) return snprintf(buf, n, "%.1f s", (double)kTimes[idx(stored_or(f, 1, (int)f->p[P_MID]))]);
-    if (!strcmp(key, "xover_display")) return snprintf(buf, n, "%d Hz", kFrequencies[idx(stored_or(f, 2, (int)f->p[P_XOVER]))]);
-    if (!strcmp(key, "treble_display")) return snprintf(buf, n, "%d Hz", kFrequencies[idx(stored_or(f, 3, (int)f->p[P_TREBLE]))]);
-    if (!strcmp(key, "predelay_display"))
-        return snprintf(buf, n, "%d ms", stored_or(f, 5, predelay_target(program_of(f), (int)lrintf(f->p[P_PREDELAY]))));
+    for (int slot = 0; slot < 7; slot++) {
+        char k2[32];
+        snprintf(k2, sizeof k2, "%s_display", KEYS[SLIDER_PARAM[slot]]);
+        if (!strcmp(key, k2)) return snprintf(buf, n, "%s", slider_text(f, slot).c_str());
+    }
     if (!strcmp(key, "rom_status")) return snprintf(buf, n, "%d", f->ready.load() ? 1 : 0);
     if (!strcmp(key, "display_rev")) { poll(f); watch_firmware(f); return snprintf(buf, n, "%u", f->rev_no); }
     if (!strcmp(key, "debug") && f->ready.load()) {
@@ -246,7 +263,11 @@ int get_param(void *inst, const char *key, char *buf, int n) {
                         m.mem[0x3f3f], (int)m.dsp.run, (int)f->rev->panel().idle(), m.mem[0x3f67], m.mem[0x3f66], m.mem[0x3f68], m.mem[0x3f69],
                         m.mem[0x3f6a], m.mem[0x3f6d], m.mem[0x3f6e]);
     }
-    if (!strcmp(key, "status")) return snprintf(buf, n, "%s", f->status);
+    if (!strcmp(key, "status")) {        /* once running, the 224's display: the last slider moved, as its select button would show it */
+        if (f->state.load() == 2 && f->shown >= 0)
+            return snprintf(buf, n, "%s  %s", SLIDER_NAME[f->shown], slider_text(f, f->shown).c_str());
+        return snprintf(buf, n, "%s", f->status);
+    }
     if (!strcmp(key, "meter_l")) return snprintf(buf, n, "%d", f->meter[0]);
     if (!strcmp(key, "meter_r")) return snprintf(buf, n, "%d", f->meter[1]);
     return 0;

@@ -23,10 +23,9 @@ inline unsigned raw_for(const uint8_t *table, int target) {
 }
 }  // namespace r224
 namespace r224 {
-// what the 224's display shows for a stored BASS / MID step (seconds) and CROSSOVER / TREBLE DECAY step (Hz): the v4.4 front
-// panel's labels (nominal settings, not measured decay times)
-inline constexpr float kTimes[32] = {0.6f, 0.6f, 0.8f, 0.9f, 1.1f, 1.2f, 1.3f, 1.4f, 1.5f, 1.7f, 1.8f, 2, 2.2f, 2.4f, 2.6f, 2.8f,
-                                     3, 3.4f, 3.8f, 4.2f, 4.6f, 5.2f, 5.7f, 6.5f, 7.5f, 8.5f, 10, 12, 16, 22, 35, 70};
-inline constexpr int kFrequencies[32] = {100, 100, 200, 300, 420, 540, 660, 780, 920, 1000, 1200, 1300, 1500, 1700, 1830, 2000,
-                                         2200, 2400, 2600, 2800, 3100, 3400, 3700, 4000, 4400, 4800, 5300, 5900, 6600, 7500, 8800, 10900};
+// The 224's own display text for a stored BASS / MID step and CROSSOVER / TREBLE DECAY step: the digits and unit LED the v4.4
+// firmware shows with the slider's select button held, read off our machine (test/display_sweep.cpp; step 0 is shown as step 1).
+// DEPTH and DIFFUSION show two digits ("07"), PRE-DELAY three and MS ("024 MS"), in every program.
+inline constexpr const char *kTimeText[32] = {"0.6 SEC", "0.6 SEC", "0.8 SEC", "0.9 SEC", "1.1 SEC", "1.2 SEC", "1.3 SEC", "1.4 SEC", "1.5 SEC", "1.7 SEC", "1.8 SEC", "2.0 SEC", "2.2 SEC", "2.4 SEC", "2.6 SEC", "2.8 SEC", "3.0 SEC", "3.4 SEC", "3.8 SEC", "4.2 SEC", "4.6 SEC", "5.2 SEC", "5.7 SEC", "6.5 SEC", "7.5 SEC", "8.5 SEC", "10.0 SEC", "12.0 SEC", "16.0 SEC", "22.0 SEC", "35.0 SEC", "70.0 SEC"};
+inline constexpr const char *kFreqText[32] = {"100 HZ", "100 HZ", "200 HZ", "300 HZ", "420 HZ", "540 HZ", "660 HZ", "780 HZ", "920 HZ", "1.00 KHZ", "1.20 KHZ", "1.30 KHZ", "1.50 KHZ", "1.70 KHZ", "1.83 KHZ", "2.00 KHZ", "2.20 KHZ", "2.40 KHZ", "2.60 KHZ", "2.80 KHZ", "3.10 KHZ", "3.40 KHZ", "3.70 KHZ", "4.00 KHZ", "4.40 KHZ", "4.80 KHZ", "5.30 KHZ", "5.90 KHZ", "6.60 KHZ", "7.50 KHZ", "8.80 KHZ", "10.9 KHZ"};
 }  // namespace r224
