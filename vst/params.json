@@ -60,8 +60,7 @@
    "min": 0,
    "max": 128,
    "default": 0,
-   "display": "int",
-   "unit": "ms"
+   "display": "int"
   },
   {
    "key": "diffusion",

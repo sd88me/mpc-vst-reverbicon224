@@ -33,7 +33,6 @@ enum { P_ALGO, P_BASS, P_MID, P_XOVER, P_TREBLE, P_DEPTH, P_PREDELAY, P_DIFF, P_
 const char *const KEYS[NP] = {"algorithm", "bass", "mid", "xover", "treble", "depth", "predelay", "diffusion", "input",
                               "mix", "dirt", "mode_enh", "decay_opt", "out_l", "out_r"};
 const float DEFAULTS[NP] = {2, 17, 14, 5, 23, 21, 0, 1, 0, 100, 0, 1, 1, 0, 2};
-const int PREDELAY_MIN[6] = {24, 0, 24, 25, 0, 24};   /* each program's lowest PRE-DELAY (ms), measured on the firmware */
 
 /* v4.4's five chips by CRC-32 (ROM1..ROM5) */
 const uint32_t ROM_CRC[5] = {0xee87bca0u, 0xb923c785u, 0xc5211473u, 0x6e91238eu, 0x961bf204u};
@@ -163,6 +162,13 @@ void destroy(void *inst) {
 }
 void midi(void *, const uint8_t *, int) {}
 
+/* PRE-DELAY as the 224's slider: the parameter's 0..128 is the slider's travel over the loaded program's whole range (halls
+ * 24..152 ms: 1 ms a step, as before; plates 0..107; Acoustic Chamber 25..255) */
+int predelay_target(int prog, int pd) {
+    const int lo = r224::kStoredPredelay[prog][0], hi = r224::kStoredPredelay[prog][253];
+    return lo + (std::clamp(pd, 0, 128) * (hi - lo) + 64) / 128;
+}
+
 int program_of(const Fx *f) { return std::clamp((int)f->p[P_ALGO], 0, 5); }
 
 /* hand changed controls to the panel operator (audio thread, which owns the machine): the program first, then all it resets */
@@ -178,7 +184,7 @@ void apply(Fx *f) {
     }
     const int pd = (int)lrintf(f->p[P_PREDELAY]);
     if (all || f->sent[P_PREDELAY] != pd) {
-        panel.set_slider(5, r224::raw_for(r224::kStoredPredelay[prog], PREDELAY_MIN[prog] + pd));
+        panel.set_slider(5, r224::raw_for(r224::kStoredPredelay[prog], predelay_target(prog, pd)));
         f->sent[P_PREDELAY] = pd;
     }
     const int df = (int)lrintf(f->p[P_DIFF]);
@@ -215,6 +221,8 @@ int get_param(void *inst, const char *key, char *buf, int n) {
     if (!strcmp(key, "mid_display")) return snprintf(buf, n, "%.1f s", (double)kTimes[idx(stored_or(f, 1, (int)f->p[P_MID]))]);
     if (!strcmp(key, "xover_display")) return snprintf(buf, n, "%d Hz", kFrequencies[idx(stored_or(f, 2, (int)f->p[P_XOVER]))]);
     if (!strcmp(key, "treble_display")) return snprintf(buf, n, "%d Hz", kFrequencies[idx(stored_or(f, 3, (int)f->p[P_TREBLE]))]);
+    if (!strcmp(key, "predelay_display"))
+        return snprintf(buf, n, "%d ms", stored_or(f, 5, predelay_target(program_of(f), (int)lrintf(f->p[P_PREDELAY]))));
     if (!strcmp(key, "rom_status")) return snprintf(buf, n, "%d", f->ready.load() ? 1 : 0);
     if (!strcmp(key, "display_rev")) { poll(f); return snprintf(buf, n, "%u", f->rev_no); }
     if (!strcmp(key, "debug") && f->ready.load()) {
