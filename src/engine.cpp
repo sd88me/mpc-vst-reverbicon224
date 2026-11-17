@@ -61,6 +61,7 @@ struct Fx {
     bool dirty = true;
     int sent[NP];                    /* what the panel was last asked for (-1: never) */
     float mix_s = 1;
+    uint32_t fw_sig = 0;
     float bl[128], br[128], ol[128], orr[128];
 };
 
@@ -199,10 +200,24 @@ void apply(Fx *f) {
     f->dirty = false;
 }
 
+void watch_firmware(Fx *f);
 void set_param(void *inst, const char *key, const char *val) {
     Fx *f = (Fx *)inst;
     for (int i = 0; i < NP; i++)
-        if (!strcmp(key, KEYS[i])) { f->p[i] = (float)atof(val); f->dirty = true; return; }
+        if (!strcmp(key, KEYS[i])) {
+            const float v = (float)atof(val);
+            if (v != f->p[i]) f->rev_no++;      /* the skin redraws text (program name, values) when display_rev moves */
+            f->p[i] = v; f->dirty = true; return;
+        }
+}
+
+/* the firmware takes a move a little later than set_param: redraw when its stored values or program change */
+void watch_firmware(Fx *f) {
+    if (!f->ready.load(std::memory_order_acquire)) return;
+    const auto &m = f->rev->machine();
+    uint32_t sig = m.mem[0x3f65];
+    for (uint16_t a = 0x3f66; a <= 0x3f6e; a++) sig = sig * 31u + m.mem[a];
+    if (sig != f->fw_sig) { f->fw_sig = sig; f->rev_no++; }
 }
 
 /* the firmware's stored step once running (what the 224's display shows), else the parameter's */
@@ -214,7 +229,7 @@ int stored_or(const Fx *f, int slot, int fallback) {
 int get_param(void *inst, const char *key, char *buf, int n) {
     Fx *f = (Fx *)inst;
     for (int i = 0; i < NP; i++)
-        if (!strcmp(key, KEYS[i])) return snprintf(buf, n, "%.3f", (double)f->p[i]);
+        if (!strcmp(key, KEYS[i])) return snprintf(buf, n, "%g", (double)f->p[i]);   /* "2", not "2.000": option lists take only a whole number */
     using r224::kTimes; using r224::kFrequencies;
     auto idx = [](int v) { return std::clamp(v, 0, 31); };
     if (!strcmp(key, "bass_display")) return snprintf(buf, n, "%.1f s", (double)kTimes[idx(stored_or(f, 0, (int)f->p[P_BASS]))]);
@@ -224,7 +239,7 @@ int get_param(void *inst, const char *key, char *buf, int n) {
     if (!strcmp(key, "predelay_display"))
         return snprintf(buf, n, "%d ms", stored_or(f, 5, predelay_target(program_of(f), (int)lrintf(f->p[P_PREDELAY]))));
     if (!strcmp(key, "rom_status")) return snprintf(buf, n, "%d", f->ready.load() ? 1 : 0);
-    if (!strcmp(key, "display_rev")) { poll(f); return snprintf(buf, n, "%u", f->rev_no); }
+    if (!strcmp(key, "display_rev")) { poll(f); watch_firmware(f); return snprintf(buf, n, "%u", f->rev_no); }
     if (!strcmp(key, "debug") && f->ready.load()) {
         auto &m = f->rev->machine();
         return snprintf(buf, n, "PROGRAM %02x MODE %d LEDS %02x run %d idle %d stored %d %d %d %d %d %d diff %d", m.mem[0x3f65], m.mem[0x3f45],
