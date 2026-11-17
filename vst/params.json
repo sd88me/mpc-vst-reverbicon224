@@ -20,7 +20,8 @@
    "min": 1,
    "max": 31,
    "default": 17,
-   "display": "int"
+   "display": "int",
+   "dynamic_display": true
   },
   {
    "key": "mid",
@@ -28,7 +29,8 @@
    "min": 0,
    "max": 31,
    "default": 14,
-   "display": "int"
+   "display": "int",
+   "dynamic_display": true
   },
   {
    "key": "xover",
@@ -36,7 +38,8 @@
    "min": 0,
    "max": 31,
    "default": 5,
-   "display": "int"
+   "display": "int",
+   "dynamic_display": true
   },
   {
    "key": "treble",
@@ -44,7 +47,8 @@
    "min": 0,
    "max": 31,
    "default": 23,
-   "display": "int"
+   "display": "int",
+   "dynamic_display": true
   },
   {
    "key": "depth",
@@ -60,7 +64,8 @@
    "min": 0,
    "max": 128,
    "default": 0,
-   "display": "int"
+   "display": "int",
+   "dynamic_display": true
   },
   {
    "key": "diffusion",
