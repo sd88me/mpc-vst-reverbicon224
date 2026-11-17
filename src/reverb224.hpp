@@ -118,9 +118,10 @@ private:
         Dsp &d = m_->dsp;
         for (int c = 0; c < 2; c++) {
             const unsigned load = c == 0 ? 89 : 39;
-            if (((load + 256 - d.count) & 255) >= unsigned(kChunk) + 2) continue;
             const analog::Tick lat = in_[c].latency();
-            const double volts = vintage_.input(5.0 * in_[c].sample(now > lat ? now - lat : 0));
+            const double held = in_[c].sample(now > lat ? now - lat : 0);   // always: the input board runs while the DSP is halted
+            if (((load + 256 - d.count) & 255) >= unsigned(kChunk) + 2) continue;
+            const double volts = vintage_.input(5.0 * held);
             const analog::Converted k = analog::convert(volts);
             const double g = vintage_.range_gain(k.iga);
             const unsigned code = g == 1.0 ? k.code : analog::convert(volts * g).code;

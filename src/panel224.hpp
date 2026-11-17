@@ -94,10 +94,18 @@ private:
             }
             if (s.phase == 1) {
                 if (diff && !seen(1, Layout224::SHIFT)) return false;
-                m_.mem[pick] = uint8_t(m_.mem[pick] | 0x80);      // take the parameter over
                 const unsigned recorded = peek(pots), v = s.c;
-                if (recorded != v) m_.panel.pots[s.a] = uint8_t(v < recorded ? v : v + 2);
+                if (recorded == v) {                              // already there (a program load reset the value under it):
+                    m_.panel.pots[s.a] = uint8_t(v >= 16 ? v - 16 : v + 18);   // move away first, so the scan sees a move back
+                    s.phase = 4; s.since = now; return false;
+                }
+                m_.mem[pick] = uint8_t(m_.mem[pick] | 0x80);      // take the parameter over
+                m_.panel.pots[s.a] = uint8_t(v < recorded ? v : v + 2);
                 s.phase = 2; s.since = now; return false;
+            }
+            if (s.phase == 4) {                                   // wait for the scan to record the move away, then go back
+                if (peek(pots) == s.c && now - s.since < kTimeout) return false;
+                s.phase = 1; return false;
             }
             if (s.phase == 2) {
                 if (peek(pots) != s.c && now - s.since < kTimeout) return false;

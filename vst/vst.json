@@ -20,8 +20,7 @@
  "build": {
   "root": "..",
   "sources": [
-   "src/engine.cpp",
-   "src/core/hall.cpp"
+   "src/engine.cpp"
   ],
   "cflags": [
    "-std=gnu++20",
@@ -30,7 +29,8 @@
    "-ffp-contract=off"
   ],
   "libs": [
-   "-lm"
+   "-lm",
+   "-lpthread"
   ]
  },
  "presets": "presets.json"
